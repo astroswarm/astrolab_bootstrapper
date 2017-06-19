@@ -17,171 +17,50 @@
         tag: "{% raw %}{{ '{{' }}.Name{{ '}}' }}/{{ '{{' }}.ImageID{{ '}}' }}{% endraw %}"
       docker_log_opts: "{{ u_docker_log_opts | to_yaml }}" # Convert unicode string to ascii strings
 
-# Install golang on x64
-- hosts: all
-  become: true
-  roles:
-    - role: joshualund.golang
-      when: ansible_machine == "x86_64"
-      go_tarball: "go1.8.3.linux-amd64.tar.gz"
-      go_tarball_checksum: "sha256:1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772"
-      go_version_target: "go version go1.8.3 linux/amd64"
-
-# Install golang on arm
-- hosts: all
-  become: true
-  roles:
-    - role: joshualund.golang
-      when: ansible_machine == "armv7l"
-      go_tarball: "go1.8.3.linux-armv6l.tar.gz"
-      go_tarball_checksum: "sha256:3c30a3e24736ca776fc6314e5092fb8584bd3a4a2c2fa7307ae779ba2735e668"
-      go_version_target: "go version go1.8.3 linux/armv6l"
-
 - hosts: all
   become: true
   tasks:
-    - name: Install shell2http
-      shell: "/usr/local/go/bin/go get -u github.com/msoap/shell2http"
+    - name: Create host-data directory
+      file:
+        path: /host-data
+        owner: "{{ansible_user}}"
+        group: "{{ansible_user}}"
+        state: directory
+        recurse: true
     - name: Install "ip route"
       apt:
         name: iproute2
-
-- hosts: all
-  become: true
   roles:
     - role: tumf.systemd-service
-      systemd_service_name: expose_local_ip
+      systemd_service_name: expose_lan_ip_address
       systemd_service_Unit_Description: HTTP endpoint to get local IP address from a Docker container
-      systemd_service_Service_ExecStart: /root/go/bin/shell2http -port=7000 -show-errors /expose_local_ip "/sbin/ip route|awk '/default/ { print $3 }'"
+      systemd_service_Service_ExecStart: while echo $(/sbin/ip route|awk '/default/ { print $3 }') > /host-data/lan_ip_address; do sleep 60; done
       systemd_service_Service_Restart: always
       systemd_service_Service_RestartSec: 1
 
 - hosts: all
+  become: true
+  tasks:
+    - name: Download base image creator
+      get_url:
+        url: https://raw.githubusercontent.com/astroswarm/astrolab/master/import_base_image.sh
+        dest: /tmp/import_base_image.sh
+        mode: 0774
+    - name: Build base image
+      command: /tmp/import_base_image.sh
+
+- hosts: all
   become: false
   roles:
-    - role: xapplication_container
-      service_name: lin_guider
-      version: 4.1.0
-      gui_width: 645
-      gui_height: 500
-      build_packages:
-        - build-essential
-        - bzip2
-        - fxload
-        - libftdi-dev
-        - libqt4-dev
-        - libusb-1.0-0-dev
-        - tar
-        - wget
-      build_steps:
-        - "wget http://downloads.sourceforge.net/project/linguider/{{version}}/lin_guider-{{version}}.tar.bz2"
-        - "bunzip2 lin_guider-{{version}}.tar.bz2"
-        - "tar xf lin_guider-{{version}}.tar"
-        - cd ./lin_guider_pack/lin_guider && ./configure
-        - cd ./lin_guider_pack/lin_guider && make -j $(grep -c ^processor /proc/cpuinfo)
-        - wget https://downloads.sourceforge.net/project/cccd/firmware/firmware-ccd_1.3_all.deb
-        - dpkg -i firmware-ccd_1.3_all.deb
-        - echo 'ATTRS{idVendor}=="1856", ATTRS{idProduct}=="0011", RUN+="/sbin/fxload -t fx2 -I /lib/firmware/ccd/qhy5.hex -D $env{DEVNAME} -s /lib/firmware/ccd/qhy5loader.hex"' > /etc/udev/rules.d/85-qhy-extended.rules
-      stage_files:
-        - /lin_guider_pack/lin_guider/lin_guider
-      executable: lin_guider
-      public_vnc_port: 5901
-      public_websockify_port: 6101
-
-    - role: xapplication_container
-      service_name: phd2
-      version: 7fbaa9c55353a9d814e3c437fea187c518069a42
-      gui_width: 860
-      gui_height: 660
-      build_packages:
-        - build-essential
-        - cmake
-        - git
-        - libindi-dev
-        - libnova-dev
-        - libwxgtk3.0-dev
-        - pkg-config
-        - wx-common
-        - wx3.0-i18n
-        - zlib1g-dev
-      build_steps:
-        - git clone https://github.com/OpenPHDGuiding/phd2.git /phd2
-        - "cd /phd2 && git reset --hard {{version}}"
-        - mkdir /phd2/tmp
-        - cd /phd2/tmp && cmake ..
-        - cd /phd2/tmp && make -j $(grep -c ^processor /proc/cpuinfo)
-        - cd /phd2/tmp && make -j $(grep -c ^processor /proc/cpuinfo) install # Installs help file to /usr/local/share/phd2/PHD2GuideHelp.zip
-        - apt-get install -y wget
-        - wget https://downloads.sourceforge.net/project/cccd/firmware/firmware-ccd_1.3_all.deb
-        - dpkg -i firmware-ccd_1.3_all.deb ; apt-get install -f -y
-        - echo 'ATTRS{idVendor}=="1856", ATTRS{idProduct}=="0011", RUN+="/sbin/fxload -t fx2 -I /lib/firmware/ccd/qhy5.hex -D $env{DEVNAME} -s /lib/firmware/ccd/qhy5loader.hex"' > /etc/udev/rules.d/85-qhy-extended.rules
-      stage_files:
-        - /phd2/tmp/phd2
-      executable: phd2
-      public_vnc_port: 5902
-      public_websockify_port: 6102
-
-    - role: xapplication_container
-      service_name: openskyimager
-      version: b1ad1f1b4eab0d2a0722ddaf25bd540477979ce1
-      gui_width: 870
-      gui_height: 550
-      # build-essential seems to be needed on raspbian, but not jessie. Maybe make/g++ on jessie image?
-      build_packages:
-        - build-essential
-        - cmake
-        - fxload
-        - git
-        - libcfitsio3-dev
-        - libglib2.0-0
-        - libglib2.0-dev
-        - libgtk2.0-0
-        - libgtk2.0-dev
-        - libgtk-3-0
-        - libgtk-3-dev
-        - libudev-dev
-        - sudo
-        - wget
-      build_steps:
-        - if [ $(lscpu | grep Architecture | sed s/Architecture:\\s\\+//) = "x86_64" ]; then wget http://download.cloudmakers.eu/atikccd-1.11-amd64.deb; dpkg -i atikccd-1.11-amd64.deb; apt-get -fy install; fi
-        - if [ $(lscpu | grep Architecture | sed s/Architecture:\\s\\+//) = "armv7l" ]; then wget http://download.cloudmakers.eu/atikccd-1.11-armhf.deb; dpkg -i atikccd-1.11-armhf.deb; apt-get -fy install; fi
-        - git clone https://github.com/freerobby/OpenSkyImager.git /OpenSkyImager
-        - "cd /OpenSkyImager && git reset --hard {{version}}"
-        - mkdir /OpenSkyImager/build
-        - cd /OpenSkyImager/build && cmake -D FORCE_QHY_ONLY=false ..
-        - cd /OpenSkyImager/build && make -j 1 # OSI's dependency chain cannot guarantee successful parallel builds, so only use one core.
-      stage_files:
-        - /OpenSkyImager/build/gtk/gtkImager
-      executable: gtkImager
-      public_vnc_port: 5903
-      public_websockify_port: 6103
-
-    - role: novnc_container
-      version: "0.6.1"
-
-    - role: swarm_frontend_container
-      version: b75a81354b762e5ba3eec04af9b31d7dc4583e3b
-
     - role: dockerized_service_container
-      version: f5a3977a5e4a1c789de47e1c520524a243a828b6
-      pre_build_commands:
-        - "./configure"
       service_name: swarm_brain
       git_repo: https://github.com/astroswarm/swarm_brain.git
       published_ports:
-        - "8001:8080"
+        - "8000:9292"
       volumes:
         - "/var/log/syslog:/mnt/host/var/log/syslog:ro"
-
-  tasks:
-    - name: Generate helper scripts
-      template:
-        src: templates/{{item}}.j2
-        dest: "/home/{{ansible_user}}/{{item}}"
-        mode: 0744
-      with_items:
-        - start-docker-containers
-        - stop-docker-containers
-        - clean-docker-containers
-        - clean-docker-images
-        - clean
+        - "/host-data:/host-data:ro"
+      env:
+        ASTROSWARM_API_HOST: api.astroswarm.com
+        HOST_DATA_DIR: /host-data
+        RACK_ENV: development

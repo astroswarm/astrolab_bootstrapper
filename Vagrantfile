@@ -25,19 +25,8 @@ Vagrant.configure(2) do |config|
     ]
   end
 
-  # VNC and Websockify for each XWindow Application
-  (1..3).each do |display_port_suffix|
-    vnc_port = 5900 + display_port_suffix
-    websockify_port = 6100 + display_port_suffix
-    config.vm.network "forwarded_port", guest: vnc_port, host: vnc_port
-    config.vm.network "forwarded_port", guest: websockify_port, host: websockify_port
-  end
-  # NoVNC
-  config.vm.network "forwarded_port", guest: 6080, host: 6080
-  # swarm_frontend
+  # Make brain port publicly accessible
   config.vm.network "forwarded_port", guest: 8000, host: 8000
-  # swarm_brain
-  config.vm.network "forwarded_port", guest: 8001, host: 8001
 
   config.ssh.forward_agent = true
 end

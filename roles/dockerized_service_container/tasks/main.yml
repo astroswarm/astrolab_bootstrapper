@@ -60,15 +60,10 @@
     force: true
   become: true
 
-- name: Generate docker image release script for {{service_name}}
-  template:
-    src: templates/release.j2
-    dest: /tmp/Docker/{{service_name}}/release
-    mode: 0744
-
 - name: Run {{service_name}} service via docker container
   docker_container:
     name: "{{service_name}}"
+    env: "{{env}}"
     image: "{{service_name}}"
     pull: false
     published_ports: "{{published_ports}}"
