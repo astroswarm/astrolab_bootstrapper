@@ -4,6 +4,11 @@
     - apt:
         update_cache: true
       become: true
+- hosts: all
+  tasks:
+    - apt:
+        name: ntp
+      become: true
 
 - hosts: all
   roles:
