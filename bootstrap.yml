@@ -69,3 +69,12 @@
         ASTROSWARM_API_HOST: api.astroswarm.com
         HOST_DATA_DIR: /host-data
         RACK_ENV: development
+    - role: dockerized_service_container
+      service_name: heartbeat
+      git_repo: https://github.com/astroswarm/heartbeat.git
+      volumes:
+        - "/host-data:/host-data:ro"
+      env:
+        BRAIN_WAN_PORT: 8000
+        HOST_DATA_DIR: /host-data
+        HEARTBEAT_INTERVAL_IN_SECONDS: 60
