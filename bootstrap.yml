@@ -39,9 +39,9 @@
     - role: tumf.systemd-service
       systemd_service_name: expose_lan_ip_address
       systemd_service_Unit_Description: HTTP endpoint to get local IP address from a Docker container
-      systemd_service_Service_ExecStart: while echo $(/sbin/ip route|awk '/default/ { print $3 }') > /host-data/lan_ip_address; do sleep 60; done
+      systemd_service_Service_ExecStart: /bin/sh -c "/bin/echo $(/sbin/ip route | /usr/bin/awk '/default/ { print $3 }') > /host-data/lan_ip_address"
       systemd_service_Service_Restart: always
-      systemd_service_Service_RestartSec: 1
+      systemd_service_Service_RestartSec: 5
 
 - hosts: all
   become: true
