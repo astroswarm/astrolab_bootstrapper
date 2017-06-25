@@ -25,8 +25,10 @@ Vagrant.configure(2) do |config|
     ]
   end
 
-  # Make brain port publicly accessible
-  config.vm.network "forwarded_port", guest: 8000, host: 8000
+  # Expose brain, portainer HTTP interfaces
+  (8000..8001).each do |port|
+    config.vm.network "forwarded_port", guest: port, host: port
+  end
 
   config.ssh.forward_agent = true
 end
