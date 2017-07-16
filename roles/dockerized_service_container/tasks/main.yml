@@ -54,10 +54,17 @@
 
 - name: Build {{service_name}} docker image
   docker_image:
+    buildargs: "{{buildargs}}"
     name: "{{service_name}}"
     path: /tmp/Docker/{{service_name}}/git
     pull: false
     force: true
+  become: true
+
+- name: Create the networks
+  docker_network:
+    name: "{{item.name}}"
+  with_items: "{{networks}}"
   become: true
 
 - name: Run {{service_name}} service via docker container
@@ -70,4 +77,5 @@
     restart_policy: "{{restart_policy}}"
     state: "{{container_state}}"
     volumes: "{{volumes}}"
+    networks: "{{networks}}"
   become: true

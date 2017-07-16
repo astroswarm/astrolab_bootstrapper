@@ -8,4 +8,5 @@ published_ports: []
 volumes: []
 pre_build_commands: []
 env:
-  
+networks: []
+buildargs:

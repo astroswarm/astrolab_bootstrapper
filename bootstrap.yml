@@ -58,19 +58,26 @@
   become: false
   roles:
     - role: dockerized_service_container
-      service_name: swarm_brain
-      git_repo: https://github.com/astroswarm/swarm_brain.git
+      service_name: brain
+      buildargs:
+        ARCH: "{{ansible_architecture}}"
+      git_repo: https://github.com/astroswarm/brain.git
       published_ports:
         - "8000:9292"
       volumes:
         - "/var/log/syslog:/mnt/host/var/log/syslog:ro"
         - "/host-data:/host-data:ro"
+        - "/var/run/docker.sock:/var/run/docker.sock"
       env:
         ASTROSWARM_API_HOST: api.astroswarm.com
         HOST_DATA_DIR: /host-data
         RACK_ENV: development
+      networks:
+        - name: astrolab_default
     - role: dockerized_service_container
       service_name: heartbeat
+      buildargs:
+        ARCH: "{{ansible_architecture}}"
       git_repo: https://github.com/astroswarm/heartbeat.git
       volumes:
         - "/host-data:/host-data:ro"
@@ -78,6 +85,8 @@
         BRAIN_WAN_PORT: 8000
         HOST_DATA_DIR: /host-data
         HEARTBEAT_INTERVAL_IN_SECONDS: 60
+      networks:
+        - name: astrolab_default
 
 - hosts: all
   become: true
@@ -106,5 +115,27 @@
         volumes:
           - "/var/run/docker.sock:/var/run/docker.sock"
           - "/mnt/stage/portainer/data:/data"
+        networks:
+          - name: astrolab_default
+      become: true
+    - name: Install localtunnel image
+      docker_image:
+        name: "astroswarm/localtunnel_client-{{ansible_architecture}}"
+        pull: true
+      become: true
+    - name: Run localtunnel container
+      docker_container:
+        name: localtunnel
+        image: "astroswarm/localtunnel_client-{{ansible_architecture}}"
+        restart_policy: unless-stopped
+        state: started
+        env:
+          HTTP_HOST: brain
+          HTTP_PORT: 9292
+        networks:
+          - name: astrolab_default
+        labels:
+          "com.docker.compose.project": "astrolab"
+          "com.docker.compose.service": "localtunnel"
       become: true
 
