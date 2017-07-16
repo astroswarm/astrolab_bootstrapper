@@ -23,6 +23,7 @@
       git:
         repo: https://github.com/astroswarm/QHYCCD_Linux.git
         dest: /tmp/QHYCCD_Linux
+        version: origin/rg-qhy5-loader
     - name: Install QHYCCD SDK (includes udev rules)
       become: true
       shell: "cmake . && make install"
