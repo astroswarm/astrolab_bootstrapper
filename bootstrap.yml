@@ -10,6 +10,7 @@
         name: ntp
       become: true
 
+# Install QHY drivers
 - hosts: all
   tasks:
     - name: Install build prerequisites
@@ -29,6 +30,13 @@
       shell: "cmake . && make install"
       args:
         chdir: /tmp/QHYCCD_Linux
+
+# Install Atik drivers
+- hosts: all
+  tasks:
+    - name: Download and install the Atik SDK
+      apt:
+        deb: "http://download.cloudmakers.eu/atikccd-1.23-{{'armhf' if ansible_machine == 'armv7l' else 'amd64' if ansible_machine == 'x86_64' else ''}}.deb"
 
 - hosts: all
   roles:
