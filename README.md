@@ -1,6 +1,6 @@
-# Swarm Builder
+# Astrolab Builder
 
-Builds AstroSwarm on a Vagrant virtual machine running Debian, or on a Raspberry Pi running Raspbian.
+Builds Astrolab image on a Vagrant virtual machine running Debian, or on a Raspberry Pi running Raspbian.
 
 ## How it works
 
@@ -24,11 +24,4 @@ Current tooling assumes a Mac OS X development system.
 ### Building on a Debian VM
 
 1. Run `./deploy-vagrant`
-1. Access AstroSwarm at `http://localhost:8000`
-
-### Building on a Raspberry Pi
-
-1. Build an AstroSwarm-compatible Raspberry Pi Micro SD card using `swarm_pi_flasher`.
-1. Place Micro SD card into Raspberry Pi, turn it on, and find its IP address on your network. For my manufacturer, `arp -a | grep b8:27` works well for this.
-1. Run `./deploy-pi <pi ip address>` to build AstroSwarm on the Raspberry Pi.
-1. Access AstroSwarm at `http://<pi ip address>:8000`
+1. Look for your Astrolab at `http://app.astroswarm.com/#activate`
