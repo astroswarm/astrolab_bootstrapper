@@ -11,6 +11,25 @@
       become: true
 
 - hosts: all
+  tasks:
+    - name: Install build prerequisites
+      apt:
+        name: "{{item}}"
+      with_items:
+        - build-essential
+        - cmake
+        - git
+    - name: Download QHYCCD SDK
+      git:
+        repo: https://github.com/astroswarm/QHYCCD_Linux.git
+        dest: /tmp/QHYCCD_Linux
+    - name: Install QHYCCD SDK (includes udev rules)
+      become: true
+      shell: "cmake . && make install"
+      args:
+        chdir: /tmp/QHYCCD_Linux
+
+- hosts: all
   roles:
     - role: avinetworks.docker
       become: true
