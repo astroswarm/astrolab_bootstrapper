@@ -88,6 +88,7 @@
         - "/var/log/syslog:/mnt/host/var/log/syslog:ro"
         - "/host-data:/host-data:ro"
         - "/var/run/docker.sock:/var/run/docker.sock"
+        - "/mnt/shared:/mnt/shared"
       env:
         ASTROSWARM_API_HOST: api.astroswarm.com
         HOST_DATA_DIR: /host-data
@@ -111,9 +112,9 @@
 - hosts: all
   become: true
   tasks:
-    - name: Create staging area for portainer state
+    - name: Create shared area for portainer state
       file:
-        path: /mnt/stage/portainer/data
+        path: /mnt/shared/portainer/data
         group: "{{ansible_user}}"
         owner: "{{ansible_user}}"
         recurse: true
@@ -134,7 +135,7 @@
         state: started
         volumes:
           - "/var/run/docker.sock:/var/run/docker.sock"
-          - "/mnt/stage/portainer/data:/data"
+          - "/mnt/shared/portainer/data:/data"
         networks:
           - name: astrolab_default
       become: true
