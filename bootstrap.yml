@@ -108,6 +108,17 @@
         HEARTBEAT_INTERVAL_IN_SECONDS: 60
       networks:
         - name: astrolab_default
+    - role: dockerized_service_container
+      service_name: file_manager
+      buildargs:
+        ARCH: "{{ansible_architecture}}"
+      git_repo: https://github.com/astroswarm/file_manager.git
+      volumes:
+        - "/mnt/shared:/mnt/shared"
+      networks:
+        - name: astrolab_default
+      published_ports:
+        - "8002:8080"
 
 - hosts: all
   become: true

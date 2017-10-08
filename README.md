@@ -25,3 +25,10 @@ Current tooling assumes a Mac OS X development system.
 
 1. Run `./deploy-vagrant`
 1. Look for your Astrolab at `http://app.astroswarm.com/#activate`
+
+### Building on a Raspberry Pi
+
+1. Build an AstroSwarm-compatible Raspberry Pi Micro SD card using `swarm_pi_flasher`.
+1. Place Micro SD card into Raspberry Pi, turn it on, and find its IP address on your network. For my manufacturer, `arp -a | grep b8:27` works well for this.
+1. Run `./bootstrap-pi <pi ip address>` to establish credentials on the Raspberry Pi.
+1. Run `./deploy-pi <pi ip address>` to build AstroSwarm on the Raspberry Pi.
