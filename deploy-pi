@@ -10,7 +10,7 @@ if [ "$?" -ne "0" ]; then
   ssh-add
 fi
 
-time /usr/local/bin/ansible-playbook -s bootstrap.yml -i $1, -vvv -u pi --ssh-common-args="-o ForwardAgent=yes"
+time /usr/local/bin/ansible-playbook -s bootstrap.yml -i $1, -vv -u pi --ssh-common-args="-o ForwardAgent=yes"
 DEPLOY_RETURN_CODE=$?
 if [ "$DEPLOY_RETURN_CODE" -ne "0" ]; then
   echo "Deploy failed with code: $DEPLOY_RETURN_CODE. Did you forget to run ./bootstrap-pi?"

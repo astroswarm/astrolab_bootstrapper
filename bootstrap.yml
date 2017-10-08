@@ -34,6 +34,14 @@
   roles:
     - role: avinetworks.docker
       become: true
+  tasks:
+    - group:
+        name: docker
+        state: present
+    - user:
+        append: true
+        name: "{{ansible_user}}"
+        groups: docker,pi,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,netdev,spi,i2c,gpio
 
 - hosts: all
   become: true
@@ -55,6 +63,12 @@
     - name: Install "ip route"
       apt:
         name: iproute2
+    - name: Install pip
+      apt:
+        name: python-pip
+    - name: Install docker-compose
+      pip:
+        name: docker-compose
   roles:
     - role: tumf.systemd-service
       systemd_service_name: expose_lan_ip_address
@@ -63,3 +77,15 @@
       systemd_service_Service_Restart: always
       systemd_service_Service_RestartSec: 60
 
+- hosts: all
+  become: true
+  tasks:
+    - name: Download Astrolab
+      git:
+        repo: https://github.com/astroswarm/astrolab.git
+        dest: /usr/local/astrolab
+    - name: Build and run Astrolab
+      shell: . ./production.sh && /usr/local/bin/docker-compose up -d --build
+      args:
+        chdir: /usr/local/astrolab
+        
