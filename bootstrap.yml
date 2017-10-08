@@ -45,13 +45,20 @@
 - hosts: all
   become: true
   tasks:
-    - name: Create host-data directory
+    - name: Create shared area for host-data
       file:
         path: /host-data
         owner: "{{ansible_user}}"
         group: "{{ansible_user}}"
-        state: directory
         recurse: true
+        state: directory
+    - name: Create shared area for portainer state
+      file:
+        path: /mnt/shared/portainer/data
+        group: "{{ansible_user}}"
+        owner: "{{ansible_user}}"
+        recurse: true
+        state: directory
     - name: Install "ip route"
       apt:
         name: iproute2
@@ -62,112 +69,4 @@
       systemd_service_Service_ExecStart: /bin/sh -c "/sbin/ip route get 1 | /usr/bin/awk '{print $NF;exit}' | /usr/bin/xargs /bin/echo -n > /host-data/lan_ip_address"
       systemd_service_Service_Restart: always
       systemd_service_Service_RestartSec: 60
-
-- hosts: all
-  become: true
-  tasks:
-    - name: Download base image creator
-      get_url:
-        url: https://raw.githubusercontent.com/astroswarm/astrolab/master/import_base_image.sh
-        dest: /tmp/import_base_image.sh
-        mode: 0774
-    - name: Build base image
-      command: /tmp/import_base_image.sh
-
-- hosts: all
-  become: false
-  roles:
-    - role: dockerized_service_container
-      service_name: brain
-      buildargs:
-        ARCH: "{{ansible_architecture}}"
-      git_repo: https://github.com/astroswarm/brain.git
-      published_ports:
-        - "8000:9292"
-      volumes:
-        - "/var/log/syslog:/mnt/host/var/log/syslog:ro"
-        - "/host-data:/host-data:ro"
-        - "/var/run/docker.sock:/var/run/docker.sock"
-        - "/mnt/shared:/mnt/shared"
-      env:
-        ASTROSWARM_API_HOST: api.astroswarm.com
-        HOST_DATA_DIR: /host-data
-        RACK_ENV: development
-      networks:
-        - name: astrolab_default
-    - role: dockerized_service_container
-      service_name: heartbeat
-      buildargs:
-        ARCH: "{{ansible_architecture}}"
-      git_repo: https://github.com/astroswarm/heartbeat.git
-      volumes:
-        - "/host-data:/host-data:ro"
-      env:
-        BRAIN_WAN_PORT: 8000
-        HOST_DATA_DIR: /host-data
-        HEARTBEAT_INTERVAL_IN_SECONDS: 60
-      networks:
-        - name: astrolab_default
-    - role: dockerized_service_container
-      service_name: file_manager
-      buildargs:
-        ARCH: "{{ansible_architecture}}"
-      git_repo: https://github.com/astroswarm/file_manager.git
-      volumes:
-        - "/mnt/shared:/mnt/shared"
-      networks:
-        - name: astrolab_default
-      published_ports:
-        - "8002:8080"
-
-- hosts: all
-  become: true
-  tasks:
-    - name: Create shared area for portainer state
-      file:
-        path: /mnt/shared/portainer/data
-        group: "{{ansible_user}}"
-        owner: "{{ansible_user}}"
-        recurse: true
-        state: directory
-    - name: Install portainer image
-      docker_image:
-        name: portainer/portainer:1.13.3
-        pull: true
-      become: true
-    - name: Run portainer container
-      docker_container:
-        entrypoint: "/portainer --host unix:///var/run/docker.sock --no-auth"
-        name: portainer
-        image: portainer/portainer:1.13.3
-        published_ports:
-          - "0.0.0.0:8001:9000"
-        restart_policy: unless-stopped
-        state: started
-        volumes:
-          - "/var/run/docker.sock:/var/run/docker.sock"
-          - "/mnt/shared/portainer/data:/data"
-        networks:
-          - name: astrolab_default
-      become: true
-    - name: Install localtunnel image
-      docker_image:
-        name: "astroswarm/localtunnel_client-{{ansible_architecture}}"
-        pull: true
-      become: true
-    - name: Run localtunnel container
-      docker_container:
-        name: localtunnel
-        image: "astroswarm/localtunnel_client-{{ansible_architecture}}"
-        restart_policy: unless-stopped
-        state: started
-        env:
-          HTTP_HOST: brain
-          HTTP_PORT: 9292
-        networks:
-          - name: astrolab_default
-        labels:
-          "com.docker.compose.project": "astrolab"
-          "com.docker.compose.service": "localtunnel"
-      become: true
 
