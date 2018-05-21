@@ -32,10 +32,10 @@
         chdir: /tmp/QHYCCD_Linux
 
 - hosts: all
-  roles:
-    - role: avinetworks.docker
-      become: true
   tasks:
+    - name: Install docker
+      shell: curl -sSL https://get.docker.com/ | sh
+      become: true
     - group:
         name: docker
         state: present
