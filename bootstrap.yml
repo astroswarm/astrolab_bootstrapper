@@ -71,9 +71,14 @@
     - name: Install "ip route"
       apt:
         name: iproute2
-    - name: Install pip
+      become: true
+    - name: Install easy_install
       apt:
-        name: python-pip
+        name: python-setuptools
+      become: true
+    - name: Install pip
+      become: true
+      shell: "easy_install pip"
     - name: Install docker-compose
       pip:
         name: docker-compose
