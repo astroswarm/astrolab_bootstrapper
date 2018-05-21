@@ -38,10 +38,18 @@
     - group:
         name: docker
         state: present
+    - user: # Groups differ between x64 and Raspberry Pi (Arm)
+        append: true
+        name: "{{ansible_user}}"
+        groups: docker,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,netdev
+      become: true
+      when: ansible_architecture == "x86_64"
     - user:
         append: true
         name: "{{ansible_user}}"
         groups: docker,pi,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,netdev,spi,i2c,gpio
+      become: true
+      when: ansible_architecture == "armv7l"
 
 - hosts: all
   become: true
