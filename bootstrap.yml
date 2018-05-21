@@ -19,6 +19,7 @@
         - build-essential
         - cmake
         - git
+      become: true
     - name: Download QHYCCD SDK
       git:
         repo: https://github.com/astroswarm/QHYCCD_Linux.git
