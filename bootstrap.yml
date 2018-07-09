@@ -12,6 +12,33 @@
 
 - hosts: all
   tasks:
+    - name: Prepare wpa_supplicant for wifi connectivity.
+      copy:
+        src: files/wpa_supplicant.conf
+        dest: /etc/wpa_supplicant/wpa_supplicant.conf
+        mode: 0600
+        owner: root
+        group: root
+
+- hosts: all
+  tasks:
+    - name: Set the hostname
+      copy:
+        src: files/hostname
+        dest: /etc/hostname
+        mode: 0644
+        owner: root
+        group: root
+    - name: Update /etc/hosts with the hostname
+      copy:
+        src: files/hosts
+        dest: /etc/hosts
+        mode: 0644
+        owner: root
+        group: root
+
+- hosts: all
+  tasks:
     - name: Install build prerequisites
       apt:
         name: "{{item}}"
