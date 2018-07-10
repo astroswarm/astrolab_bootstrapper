@@ -129,7 +129,7 @@
         repo: https://github.com/astroswarm/astrolab.git
         dest: /usr/local/astrolab
     - name: Build and run Astrolab
-      shell: . ./production.sh && /usr/local/bin/docker-compose up -d --build
+      shell: . ./production.sh && /usr/local/bin/docker-compose pull && /usr/local/bin/docker-compose up -d --build
       args:
         chdir: /usr/local/astrolab
         
