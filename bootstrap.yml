@@ -81,6 +81,16 @@
 
 - hosts: all
   become: true
+  roles:
+    - role: tumf.systemd-service
+      systemd_service_name: expose_lan_ip_address
+      systemd_service_Unit_Description: Write LAN IP address to a file that containers can read
+      systemd_service_Service_ExecStart: /bin/sh -c "/sbin/ip route get 1 | /usr/bin/awk '{print $NF;exit}' | /usr/bin/xargs /bin/echo -n > /host-data/lan_ip_address"
+      systemd_service_Service_Restart: always
+      systemd_service_Service_RestartSec: 60
+
+- hosts: all
+  become: true
   tasks:
     - name: Create shared area for host-data
       file:
@@ -110,13 +120,6 @@
     - name: Install docker-compose
       pip:
         name: docker-compose
-  roles:
-    - role: tumf.systemd-service
-      systemd_service_name: expose_lan_ip_address
-      systemd_service_Unit_Description: Write LAN IP address to a file that containers can read
-      systemd_service_Service_ExecStart: /bin/sh -c "/sbin/ip route get 1 | /usr/bin/awk '{print $NF;exit}' | /usr/bin/xargs /bin/echo -n > /host-data/lan_ip_address"
-      systemd_service_Service_Restart: always
-      systemd_service_Service_RestartSec: 60
 
 - hosts: all
   become: true
