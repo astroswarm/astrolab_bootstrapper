@@ -92,6 +92,26 @@
 - hosts: all
   become: true
   tasks:
+    - apt:
+        name: shellinabox
+# Stop default shellinabox service
+- hosts: all
+  become: true
+  tasks:
+    - shell: systemctl disable shellinabox
+# Run our custom shellinabox service
+- hosts: all
+  become: true
+  roles:
+    - role: tumf.systemd-service
+      systemd_service_name: web_shell
+      systemd_service_Unit_Description: Provide a web-based shell interface to the box
+      systemd_service_Service_ExecStart: /usr/bin/shellinaboxd -v -t -p 4200
+      systemd_service_Service_Restart: on-failure
+
+- hosts: all
+  become: true
+  tasks:
     - name: Create shared area for host-data
       file:
         path: /host-data
