@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+mkdir -p ./tmp
+FILENAME=./tmp/astrolab-$(date +%Y-%m-%d).img
+
+echo "Downloading image from SD card..."
+sudo dd bs=4m if=/dev/rdisk3 of=$FILENAME
+echo "Done. Image saved to: $FILENAME"
+
+echo "Compressing..."
+gzip -9 -k $FILENAME
+echo "Done."
