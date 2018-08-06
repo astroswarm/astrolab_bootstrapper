@@ -63,6 +63,13 @@
     - name: Install docker
       shell: curl -sSL https://get.docker.com/ | sh
       become: true
+    - name: Configure docker logging
+      copy:
+        src: files/daemon.json
+        dest: /etc/docker/daemon.json
+        mode: 0644
+        owner: root
+        group: root
     - group:
         name: docker
         state: present
