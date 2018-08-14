@@ -19,6 +19,7 @@
         mode: 0600
         owner: root
         group: root
+      become: true
 
 - hosts: all
   tasks:
@@ -29,6 +30,7 @@
         mode: 0644
         owner: root
         group: root
+      become: true
     - name: Update /etc/hosts with the hostname
       copy:
         src: files/hosts
@@ -36,6 +38,7 @@
         mode: 0644
         owner: root
         group: root
+      become: true
 
 - hosts: all
   tasks:
@@ -70,9 +73,11 @@
         mode: 0644
         owner: root
         group: root
+      become: true
     - group:
         name: docker
         state: present
+      become: true
     - user: # Groups differ between x64 and Raspberry Pi (Arm)
         append: true
         name: "{{ansible_user}}"
@@ -149,12 +154,12 @@
         name: docker-compose
 
 - hosts: all
-  become: true
   tasks:
     - name: Download Astrolab
       git:
         repo: https://github.com/astroswarm/astrolab.git
         dest: /usr/local/astrolab
+      become: true
     - name: Build and run Astrolab
       shell: . ./production.sh && /usr/local/bin/docker-compose pull && /usr/local/bin/docker-compose up -d --build
       args:
