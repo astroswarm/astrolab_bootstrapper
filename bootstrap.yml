@@ -61,7 +61,7 @@
 - hosts: all
   tasks:
     - name: Install docker
-      shell: curl -sSL https://get.docker.com/ | sh
+      shell: curl -sSL https://get.docker.com/ | sh || dpkg --configure -a
       become: true
     - name: Configure docker logging
       copy:
