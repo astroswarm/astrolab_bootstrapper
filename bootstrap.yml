@@ -1,17 +1,32 @@
 ---
 - hosts: all
   tasks:
+    - name: Install status setter
+      copy:
+        src: files/set-status.sh
+        dest: /usr/local/bin/set-status.sh
+        mode: 0755
+        owner: root
+        group: staff
+      become: true
+
+- hosts: all
+  tasks:
+    - shell: /usr/local/bin/set-status.sh "Updating apt repositories"
     - apt:
         update_cache: true
       become: true
+
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing ntp"
     - apt:
         name: ntp
       become: true
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Configuring wpa_supplicant template"
     - name: Prepare wpa_supplicant for wifi connectivity.
       copy:
         src: files/wpa_supplicant.conf
@@ -23,6 +38,7 @@
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Setting hostname"
     - name: Set the hostname
       copy:
         src: files/hostname
@@ -31,6 +47,7 @@
         owner: root
         group: root
       become: true
+    - shell: /usr/local/bin/set-status.sh "Updating /etc/hosts with hostname"
     - name: Update /etc/hosts with the hostname
       copy:
         src: files/hosts
@@ -42,6 +59,7 @@
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing prerequisites for QHYCCD SDK"
     - name: Install build prerequisites
       apt:
         name: "{{item}}"
@@ -50,11 +68,13 @@
         - cmake
         - git
       become: true
+    - shell: /usr/local/bin/set-status.sh "Downloading QHYCCD SDK"
     - name: Download QHYCCD SDK
       git:
         repo: https://github.com/astroswarm/QHYCCD_Linux.git
         dest: /tmp/QHYCCD_Linux
         version: origin/rg-qhy5-loader
+    - shell: /usr/local/bin/set-status.sh "Installing QHYCCD SDK"
     - name: Install QHYCCD SDK (includes udev rules)
       become: true
       shell: "cmake . && make install"
@@ -63,9 +83,11 @@
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing Docker"
     - name: Install docker
       shell: curl -sSL https://get.docker.com/ | sh || dpkg --configure -a
       become: true
+    - shell: /usr/local/bin/set-status.sh "Configuring Docker logging"
     - name: Configure docker logging
       copy:
         src: files/daemon.json
@@ -74,10 +96,12 @@
         owner: root
         group: root
       become: true
+    - shell: /usr/local/bin/set-status.sh "Creating docker group"
     - group:
         name: docker
         state: present
       become: true
+    - shell: /usr/local/bin/set-status.sh "Adding groups to pi user for Docker privileges"
     - user: # Groups differ between x64 and Raspberry Pi (Arm)
         append: true
         name: "{{ansible_user}}"
@@ -93,6 +117,8 @@
 
 - hosts: all
   become: true
+  tasks:
+    - shell: /usr/local/bin/set-status.sh "Creating expose_lan_ip_address service"
   roles:
     - role: tumf.systemd-service
       systemd_service_name: expose_lan_ip_address
@@ -104,16 +130,21 @@
 - hosts: all
   become: true
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing shellinabox"
     - apt:
         name: shellinabox
 # Stop default shellinabox service
 - hosts: all
   become: true
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Stopping default shellinabox service"
+    - shell: systemctl stop shellinabox
     - shell: systemctl disable shellinabox
 # Run our custom shellinabox service
 - hosts: all
   become: true
+  tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing custom shellinabox service"
   roles:
     - role: tumf.systemd-service
       systemd_service_name: web_shell
@@ -124,6 +155,7 @@
 - hosts: all
   become: true
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Creating shared area for host data"
     - name: Create shared area for host-data
       file:
         path: /host-data
@@ -131,6 +163,7 @@
         group: "{{ansible_user}}"
         recurse: true
         state: directory
+    - shell: /usr/local/bin/set-status.sh "Creating shared area for portainer state"
     - name: Create shared area for portainer state
       file:
         path: /mnt/shared/portainer/data
@@ -138,30 +171,40 @@
         owner: "{{ansible_user}}"
         recurse: true
         state: directory
+    - shell: /usr/local/bin/set-status.sh "Installing ip-route"
     - name: Install "ip route"
       apt:
         name: iproute2
       become: true
+    - shell: /usr/local/bin/set-status.sh "Installing easy_install"
     - name: Install easy_install
       apt:
         name: python-setuptools
       become: true
+    - shell: /usr/local/bin/set-status.sh "Installing pip"
     - name: Install pip
       become: true
       shell: "easy_install pip"
+    - shell: /usr/local/bin/set-status.sh "Installing docker-compose"
     - name: Install docker-compose
       pip:
         name: docker-compose
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Downloading Astrolab workspace"
     - name: Download Astrolab
       git:
         repo: https://github.com/astroswarm/astrolab.git
         dest: /usr/local/astrolab
       become: true
+    - shell: /usr/local/bin/set-status.sh "Downloading Astrolab containers"
     - name: Build and run Astrolab
-      shell: . ./production.sh && /usr/local/bin/docker-compose pull && /usr/local/bin/docker-compose up -d --build
+      shell: . ./production.sh && /usr/local/bin/docker-compose pull
       args:
         chdir: /usr/local/astrolab
-        
+    - shell: /usr/local/bin/set-status.sh "Launching Astrolab containers"
+    - name: Build and run Astrolab
+      shell: . ./production.sh && /usr/local/bin/docker-compose up -d --build
+      args:
+        chdir: /usr/local/astrolab
