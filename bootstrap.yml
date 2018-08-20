@@ -139,19 +139,32 @@
   become: true
   tasks:
     - shell: /usr/local/bin/set-status.sh "Stopping default shellinabox service"
-    - shell: systemctl stop shellinabox
-    - shell: systemctl disable shellinabox
-# Run our custom shellinabox service
+    - service:
+        name: shellinabox
+        enabled: false
+        state: stopped
+
+# Create our custom shellinabox service
 - hosts: all
   become: true
   tasks:
-    - shell: /usr/local/bin/set-status.sh "Installing custom shellinabox service"
+    - shell: /usr/local/bin/set-status.sh "Creating web_shell service"
   roles:
     - role: tumf.systemd-service
       systemd_service_name: web_shell
       systemd_service_Unit_Description: Provide a web-based shell interface to the box
       systemd_service_Service_ExecStart: /usr/bin/shellinaboxd -v -t -p 4200
       systemd_service_Service_Restart: on-failure
+
+# Run our custom shellinabox service
+- hosts: all
+  become: true
+  tasks:
+    - shell: /usr/local/bin/set-status.sh "Launching web_shell service"
+    - service:
+        name: web_shell
+        enabled: true
+        state: started
 
 - hosts: all
   become: true
