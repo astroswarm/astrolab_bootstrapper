@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+/usr/bin/ansible-pull -U https://github.com/astroswarm/astrolab_bootstrapper.git -C master -i localhost, --accept-host-key update.yml

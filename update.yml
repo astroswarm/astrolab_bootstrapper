@@ -1,0 +1,59 @@
+---
+- hosts: all
+  tasks:
+  - shell: /usr/local/bin/set-status.sh "Updating updater script"
+  - name: Update Astrolab updater script
+    copy:
+      src: files/update-astrolab
+      dest: /usr/local/bin/update-astrolab
+      mode: 0755
+      owner: root
+      group: staff
+    become: true
+
+- hosts: all
+  tasks:
+  - shell: /usr/local/bin/set-status.sh "Updating apt repositories"
+  - apt:
+      update_cache: true
+    become: true
+
+- hosts: all
+  tasks:
+    - shell: /usr/local/bin/set-status.sh "Downloading Astrolab workspace"
+    - name: Download Astrolab
+      git:
+        repo: https://github.com/astroswarm/astrolab.git
+        dest: /usr/local/astrolab
+      become: true
+
+    # This isn't necessary if we manage all containers via docker-compose, but
+    # phd2 and OpenSkyImager use the Astrolab network but are created outside of it
+    - shell: /usr/local/bin/set-status.sh "Removing all containers"
+    - name: Removing containers
+      shell: . ./production.sh && /usr/bin/docker rm -f $(/usr/bin/docker ps -aq)
+      args:
+        chdir: /usr/local/astrolab
+
+    - shell: /usr/local/bin/set-status.sh "Removing Astrolab environment"
+    - name: Remove existing Astrolab environment
+      shell: . ./production.sh && /usr/local/bin/docker-compose down
+      args:
+        chdir: /usr/local/astrolab
+
+    - shell: /usr/local/bin/set-status.sh "Downloading Astrolab containers"
+    - name: Download Astrolab containers
+      shell: . ./production.sh && /usr/local/bin/docker-compose pull
+      args:
+        chdir: /usr/local/astrolab
+
+    - shell: /usr/local/bin/set-status.sh "Launching Astrolab containers"
+    - name: Run Astrolab containers
+      shell: . ./production.sh && /usr/local/bin/docker-compose up -d --build
+      args:
+        chdir: /usr/local/astrolab
+
+    - shell: /usr/local/bin/set-status.sh "Pruning Docker environment"
+    - name: Prune docker
+      shell: /usr/bin/docker system prune -f
+        

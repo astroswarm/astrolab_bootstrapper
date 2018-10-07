@@ -12,6 +12,18 @@
 
 - hosts: all
   tasks:
+    - shell: /usr/local/bin/set-status.sh "Installing updater script"
+    - name: Install Astrolab updater script
+      copy:
+        src: files/update-astrolab
+        dest: /usr/local/bin/update-astrolab
+        mode: 0755
+        owner: root
+        group: staff
+      become: true
+
+- hosts: all
+  tasks:
     - shell: /usr/local/bin/set-status.sh "Updating apt repositories"
     - apt:
         update_cache: true
@@ -213,12 +225,12 @@
         dest: /usr/local/astrolab
       become: true
     - shell: /usr/local/bin/set-status.sh "Downloading Astrolab containers"
-    - name: Build and run Astrolab
+    - name: Download Astrolab containers
       shell: . ./production.sh && /usr/local/bin/docker-compose pull
       args:
         chdir: /usr/local/astrolab
     - shell: /usr/local/bin/set-status.sh "Launching Astrolab containers"
-    - name: Build and run Astrolab
+    - name: Run Astrolab containers
       shell: . ./production.sh && /usr/local/bin/docker-compose up -d --build
       args:
         chdir: /usr/local/astrolab
