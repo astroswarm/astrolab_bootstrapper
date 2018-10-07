@@ -1,6 +1,6 @@
-# Astrolab Builder
+# Astrolab Bootstrapper
 
-Builds Astrolab image on a Vagrant virtual machine running Debian, or on a Raspberry Pi running Raspbian.
+Bootstraps an Astrolab, launching it with the latest software
 
 ## How it works
 
